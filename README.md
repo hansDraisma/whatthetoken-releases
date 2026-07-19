@@ -4,7 +4,7 @@ WhatTheToken is a privacy-first macOS menu bar app that shows Claude Code and Co
 
 ## Download
 
-Download the newest signed and notarized DMG from [Latest release](https://github.com/hansDraisma/whatthetoken-releases/releases/latest).
+Download the newest signed and notarized DMG from [WhatTheToken Releases](https://github.com/hansDraisma/whatthetoken-releases/releases).
 
 1. Download both the DMG and its `.sha256` checksum.
 2. Verify the checksum with `shasum -a 256 -c WhatTheToken-<version>.dmg.sha256`.
