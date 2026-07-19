@@ -3,13 +3,13 @@
     <channel>
         <title>WhatTheToken</title>
         <item>
-            <title>0.1.0</title>
-            <pubDate>Sun, 19 Jul 2026 14:39:02 +0200</pubDate>
-            <link>https://github.com/hansDraisma/whatthetoken-releases/releases/tag/v0.1.0</link>
-            <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <title>0.1.1</title>
+            <pubDate>Sun, 19 Jul 2026 15:52:18 +0200</pubDate>
+            <link>https://github.com/hansDraisma/whatthetoken-releases/releases/tag/v0.1.1</link>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>0.1.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/hansDraisma/whatthetoken-releases/releases/download/v0.1.0/WhatTheToken-0.1.0.dmg" length="6398809" type="application/octet-stream" sparkle:edSignature="N1K7Q8oLYw7PVdkbRbiwg35NhTCYs2qnk2gzSzPqtUjj26ADRiCsv8SvllULI5oCVdhrFkZKKVcHtNHIDylABg=="/>
+            <enclosure url="https://github.com/hansDraisma/whatthetoken-releases/releases/download/v0.1.1/WhatTheToken-0.1.1.dmg" length="6399380" type="application/octet-stream" sparkle:edSignature="Z9v1c9IgV3o0gdAVuTH+B/C5H2gBI0oPn0XL/iI7DyqjppssMWvfC49Y1Sma+fJ83gUKWnHXoAGRuw7gl3nBBg=="/>
         </item>
     </channel>
 </rss>
