@@ -1,8 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>WhatTheToken Updates</title>
-    <link>https://github.com/hansDraisma/whatthetoken-releases/releases</link>
-    <description>No public updates have been published yet. Signed release entries are generated after GitHub Release assets are available.</description>
-  </channel>
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>WhatTheToken</title>
+        <item>
+            <title>0.1.0</title>
+            <pubDate>Sun, 19 Jul 2026 14:39:02 +0200</pubDate>
+            <link>https://github.com/hansDraisma/whatthetoken-releases/releases/tag/v0.1.0</link>
+            <sparkle:version>1</sparkle:version>
+            <sparkle:shortVersionString>0.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/hansDraisma/whatthetoken-releases/releases/download/v0.1.0/WhatTheToken-0.1.0.dmg" length="6398809" type="application/octet-stream" sparkle:edSignature="N1K7Q8oLYw7PVdkbRbiwg35NhTCYs2qnk2gzSzPqtUjj26ADRiCsv8SvllULI5oCVdhrFkZKKVcHtNHIDylABg=="/>
+        </item>
+    </channel>
 </rss>
