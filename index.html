@@ -1,31 +1,636 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Download WhatTheToken for macOS.">
-  <title>WhatTheToken for macOS</title>
-  <style>
-    :root { color-scheme: light dark; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
-    body { margin: 0; padding: 3rem 1.5rem; }
-    main { max-width: 42rem; margin: 0 auto; }
-    h1 { margin-bottom: 0.5rem; }
-    p { line-height: 1.55; }
-    .button { display: inline-block; margin: 1rem 0; padding: 0.75rem 1rem; border-radius: 0.65rem; color: white; background: #146ef5; text-decoration: none; font-weight: 600; }
-    nav a { margin-right: 1rem; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WhatTheToken — know which AI coding tool you can still use</title>
+<meta name="description" content="A local-first macOS menu bar app showing Claude Code and Codex usage limits in one place — and honest about how much it actually knows.">
+<link rel="icon" href="assets/icon.png">
+
+<meta property="og:title" content="WhatTheToken for macOS">
+<meta property="og:description" content="Know which AI coding tool you can still use — before it cuts you off.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hansdraisma.github.io/whatthetoken-releases/">
+<meta property="og:image" content="https://hansdraisma.github.io/whatthetoken-releases/assets/icon.png">
+
+<style>
+/* ---------------------------------------------------------------
+   Palette pulled from the app icon: graphite ground, gauge amber,
+   terminal-chevron cyan. No web fonts — this page makes zero
+   external requests, which is the same promise the app makes.
+   --------------------------------------------------------------- */
+:root {
+  --ink:      #14171C;
+  --ink-2:    #1B1F26;
+  --slate:    #2A2F38;
+  --line:     #333A45;
+  --fg:       #E8EBEF;
+  --fg-dim:   #9AA3AF;
+  --fg-faint: #6B7480;
+
+  --amber:  #E0A82E;
+  --cyan:   #6FD9E8;
+  --green:  #4FB477;
+
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+
+  --shell: 1080px;
+  --r: 10px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --ink:      #EEF0F3;
+    --ink-2:    #FFFFFF;
+    --slate:    #E2E6EB;
+    --line:     #D3D9E0;
+    --fg:       #171B21;
+    --fg-dim:   #565E6A;
+    --fg-faint: #7C8593;
+    --amber:  #9A6D06;
+    --cyan:   #10707F;
+    --green:  #2F7D51;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.shell { width: 100%; max-width: var(--shell); margin: 0 auto; padding: 0 24px; }
+
+/* ---------- eyebrow: the page's one structural device ---------- */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 0 0 18px;
+}
+.eyebrow b { color: var(--amber); font-weight: 500; }
+
+/* ---------- top bar ---------- */
+.bar {
+  position: sticky; top: 0; z-index: 20;
+  background: color-mix(in srgb, var(--ink) 88%, transparent);
+  backdrop-filter: saturate(1.6) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.bar-in {
+  display: flex; align-items: center; gap: 14px;
+  height: 58px;
+  width: 100%; max-width: var(--shell); margin: 0 auto; padding: 0 24px;
+}
+.wordmark {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 15px; font-weight: 500;
+  letter-spacing: -0.01em; text-decoration: none;
+}
+.wordmark img { width: 24px; height: 24px; border-radius: 6px; display: block; }
+.bar-spacer { flex: 1; }
+.bar-link { font-size: 14px; color: var(--fg-dim); text-decoration: none; }
+.bar-link:hover { color: var(--fg); }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--sans); font-size: 15px; font-weight: 600;
+  padding: 11px 18px; border-radius: var(--r);
+  text-decoration: none; border: 1px solid transparent;
+  transition: transform .12s ease, filter .12s ease;
+}
+.btn-primary { background: var(--amber); color: #1A1305; }
+.btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.btn-quiet { border-color: var(--line); color: var(--fg); font-weight: 500; padding: 10px 16px; }
+.btn-quiet:hover { border-color: var(--fg-faint); }
+.btn-sm { font-size: 14px; padding: 8px 14px; }
+
+@media (prefers-color-scheme: light) {
+  .btn-primary { background: #B5811A; color: #FFF8E9; }
+}
+
+/* ---------- hero ---------- */
+.hero { padding: 76px 0 84px; }
+.hero-grid {
+  display: grid; grid-template-columns: 1.02fr 0.98fr;
+  gap: 64px; align-items: start;
+}
+h1 {
+  font-family: var(--mono);
+  font-size: clamp(34px, 4.6vw, 55px);
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  font-weight: 500;
+  margin: 0 0 22px;
+  text-wrap: balance;
+}
+h1 .off { color: var(--amber); }
+.lede { font-size: 19px; color: var(--fg-dim); margin: 0 0 32px; max-width: 30em; }
+.cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cta-note {
+  font-family: var(--mono); font-size: 12px; color: var(--fg-faint);
+  margin: 16px 0 0; letter-spacing: 0.01em;
+}
+
+/* ---------- the signature: popover replica ---------- */
+.demo { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+.pop {
+  width: 320px; max-width: 100%;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 22px 50px -14px rgba(0,0,0,.55), 0 2px 6px rgba(0,0,0,.2);
+  overflow: hidden;
+  font-size: 13px;
+}
+@media (prefers-color-scheme: light) {
+  .pop { box-shadow: 0 22px 44px -18px rgba(20,28,44,.28), 0 1px 3px rgba(20,28,44,.12); }
+}
+
+.pop-banner {
+  display: none;
+  padding: 7px 13px;
+  font-size: 12px; font-weight: 500;
+  background: color-mix(in srgb, var(--fg-faint) 20%, transparent);
+  color: var(--fg-dim);
+  border-bottom: 1px solid var(--line);
+}
+.pop.is-stale .pop-banner { display: block; }
+
+.pop-tabs { display: flex; padding: 9px 10px 0; gap: 4px; }
+.pop-tab {
+  flex: 1; text-align: center;
+  padding: 6px 8px 8px;
+  font-size: 12px; font-weight: 500; color: var(--fg-faint);
+  border-bottom: 2px solid transparent;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.pop-tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--amber); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.dot.warn { background: var(--amber); }
+.pop.is-stale .dot { background: var(--fg-faint); }
+
+.pop-body { padding: 13px; }
+
+.sec-head { margin-bottom: 11px; }
+.sec-brand { font-size: 12px; font-weight: 600; }
+.sec-trust {
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--fg-faint); margin-top: 2px; letter-spacing: 0.02em;
+}
+.pop.is-stale .sec-trust { color: var(--amber); }
+
+.row { padding: 11px 0; border-top: 1px solid var(--line); }
+.row:first-of-type { border-top: 0; padding-top: 2px; }
+.row-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.row-name { font-size: 12.5px; font-weight: 500; }
+.row-reset { font-family: var(--mono); font-size: 10.5px; color: var(--fg-faint); }
+.row-hero {
+  font-family: var(--mono); font-size: 19px; font-weight: 500;
+  letter-spacing: -0.02em; margin: 5px 0 1px;
+}
+
+.meter {
+  height: 5px; border-radius: 3px;
+  background: color-mix(in srgb, var(--fg-faint) 26%, transparent);
+  margin: 8px 0 7px; overflow: hidden;
+}
+.meter i {
+  display: block; height: 100%; border-radius: 3px;
+  background: var(--green);
+  transition: background .45s ease;
+}
+.meter i.warn { background: var(--amber); }
+.pop.is-stale .meter i { background: var(--fg-faint); }
+
+.row-foot { display: flex; align-items: center; gap: 7px; }
+.row-status { font-size: 11.5px; color: var(--fg-dim); }
+
+.tag {
+  font-family: var(--mono); font-size: 9.5px;
+  letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 2px 6px; border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--cyan) 45%, transparent);
+  color: var(--cyan);
+  white-space: nowrap;
+}
+.tag.is-stale { border-color: color-mix(in srgb, var(--amber) 55%, transparent); color: var(--amber); }
+
+.pop-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 13px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono); font-size: 10.5px; color: var(--fg-faint);
+}
+
+/* the toggle */
+.flip {
+  display: inline-flex; padding: 3px; gap: 3px;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--ink-2);
+}
+.flip button {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.03em;
+  padding: 6px 11px; border: 0; border-radius: 5px;
+  background: transparent; color: var(--fg-dim); cursor: pointer;
+}
+.flip button[aria-pressed="true"] { background: var(--slate); color: var(--fg); }
+.flip-cap {
+  font-family: var(--mono); font-size: 11px; color: var(--fg-faint);
+  text-align: center; margin: 0; max-width: 34ch; line-height: 1.5;
+}
+
+/* ---------- generic sections ---------- */
+.band { padding: 74px 0; border-top: 1px solid var(--line); }
+h2 {
+  font-family: var(--mono); font-size: clamp(23px, 2.5vw, 30px);
+  font-weight: 500; letter-spacing: -0.025em;
+  margin: 0 0 16px; line-height: 1.2;
+}
+.band > .shell > p { color: var(--fg-dim); max-width: 62ch; margin: 0 0 12px; }
+
+.labels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 34px; }
+.label-card {
+  border: 1px solid var(--line); border-radius: var(--r);
+  padding: 16px; background: var(--ink-2);
+}
+.label-card h3 {
+  font-family: var(--mono); font-size: 12px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  margin: 0 0 8px; color: var(--cyan);
+}
+.label-card.warn h3 { color: var(--amber); }
+.label-card p { font-size: 14px; color: var(--fg-dim); margin: 0; line-height: 1.5; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 30px; font-size: 15px; }
+th, td { text-align: left; padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-faint);
+}
+td { color: var(--fg-dim); }
+td:first-child { font-weight: 600; white-space: nowrap; padding-right: 26px; color: var(--fg); }
+td code {
+  font-family: var(--mono); font-size: 12.5px;
+  color: var(--cyan); background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+}
+td code.none { color: var(--fg-faint); background: color-mix(in srgb, var(--fg-faint) 14%, transparent); }
+
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 32px; }
+.fact { border: 1px solid var(--line); border-radius: var(--r); padding: 18px; background: var(--ink-2); }
+.fact h3 { font-size: 15px; margin: 0 0 7px; }
+.fact p { font-size: 14px; color: var(--fg-dim); margin: 0; line-height: 1.55; }
+
+pre {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--ink-2); border: 1px solid var(--line);
+  border-radius: var(--r); padding: 15px 17px;
+  overflow-x: auto; margin: 22px 0 0; color: var(--fg-dim);
+}
+pre b { color: var(--fg); font-weight: 500; }
+
+ol.steps { counter-reset: s; list-style: none; padding: 0; margin: 26px 0 0; max-width: 60ch; }
+ol.steps li {
+  counter-increment: s; position: relative;
+  padding-left: 34px; margin-bottom: 13px;
+  color: var(--fg-dim); font-size: 15px;
+}
+ol.steps li::before {
+  content: counter(s); position: absolute; left: 0; top: 1px;
+  font-family: var(--mono); font-size: 11px; color: var(--amber);
+  border: 1px solid var(--line); border-radius: 5px;
+  width: 21px; height: 21px; display: grid; place-items: center;
+}
+ol.steps code {
+  font-family: var(--mono); font-size: 13px; color: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 12%, transparent);
+  padding: 1px 5px; border-radius: 4px;
+}
+
+footer { border-top: 1px solid var(--line); padding: 40px 0 56px; }
+.foot-links { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 22px; font-size: 14px; }
+.foot-links a { color: var(--fg-dim); text-decoration: none; }
+.foot-links a:hover { color: var(--fg); }
+.fine { font-size: 12.5px; color: var(--fg-faint); max-width: 76ch; margin: 0 0 10px; line-height: 1.6; }
+
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 44px; }
+  .labels { grid-template-columns: repeat(2, 1fr); }
+  .facts { grid-template-columns: 1fr; }
+  .hero { padding: 52px 0 60px; }
+  .band { padding: 56px 0; }
+}
+@media (max-width: 560px) {
+  body { font-size: 16px; }
+  .labels { grid-template-columns: 1fr; }
+  table { font-size: 14px; }
+  td:first-child { white-space: normal; }
+  .bar-link.hide-sm { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  .btn:hover { transform: none; }
+}
+</style>
 </head>
 <body>
-  <main>
-    <h1>WhatTheToken</h1>
-    <p>A privacy-first macOS menu bar app for seeing Claude Code and Codex usage limits in one place.</p>
-    <a class="button" href="https://github.com/hansDraisma/whatthetoken-releases/releases">View downloads</a>
-    <p>Requires macOS 14 or later. Releases are distributed as signed and notarized DMGs with SHA-256 checksums.</p>
-    <nav>
-      <a href="https://github.com/hansDraisma/whatthetoken-releases">Release details</a>
-      <a href="https://github.com/hansDraisma/whatthetoken-releases/blob/main/PRIVACY.md">Privacy</a>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="wordmark" href="#top"><img src="assets/icon.png" alt="">WhatTheToken</a>
+    <span class="bar-spacer"></span>
+    <a class="bar-link hide-sm" href="https://github.com/hansDraisma/whatthetoken">Source</a>
+    <a class="bar-link hide-sm" href="PRIVACY.md">Privacy</a>
+    <a class="btn btn-quiet btn-sm" href="https://github.com/hansDraisma/whatthetoken-releases/releases/latest">Download</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">macOS menu bar · <b>free</b> · open source</p>
+        <h1>Know which AI coding tool you can still use<span class="off">.</span></h1>
+        <p class="lede">
+          Claude Code and Codex quota in one place — and, unlike most usage
+          trackers, honest about how much it actually knows.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="https://github.com/hansDraisma/whatthetoken-releases/releases/latest">
+            Download for macOS
+          </a>
+          <a class="btn btn-quiet" href="https://github.com/hansDraisma/whatthetoken">Read the source</a>
+        </div>
+        <p class="cta-note">macOS 14+ · signed &amp; notarised · no account</p>
+      </div>
+
+      <!-- signature element: the real popover, rebuilt in markup -->
+      <div class="demo">
+        <div class="pop" id="pop">
+          <div class="pop-banner">Last update was 68 minutes ago.</div>
+
+          <div class="pop-tabs" role="tablist" aria-label="Provider">
+            <div class="pop-tab" role="tab" aria-selected="false"><span class="dot warn"></span>Codex</div>
+            <div class="pop-tab" role="tab" aria-selected="true"><span class="dot"></span>Claude Code</div>
+          </div>
+
+          <div class="pop-body">
+            <div class="sec-head">
+              <div class="sec-brand">Anthropic · Claude Code</div>
+              <div class="sec-trust" id="trust">Verified by Mac connector</div>
+            </div>
+
+            <div class="row">
+              <div class="row-top">
+                <span class="row-name">Current session</span>
+                <span class="row-reset">Resets in 3h 12m</span>
+              </div>
+              <div class="row-hero">62% remaining</div>
+              <div class="meter"><i style="width:38%"></i></div>
+              <div class="row-foot">
+                <span class="row-status" data-fresh="Plenty left" data-stale="Too old to trust">Plenty left</span>
+                <span class="tag" data-fresh="verified" data-stale="stale">verified</span>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="row-top">
+                <span class="row-name">Weekly · all models</span>
+                <span class="row-reset">Resets in 4d 7h</span>
+              </div>
+              <div class="row-hero">29% remaining</div>
+              <div class="meter"><i class="warn" style="width:71%"></i></div>
+              <div class="row-foot">
+                <span class="row-status" data-fresh="Running low" data-stale="Too old to trust">Running low</span>
+                <span class="tag" data-fresh="verified" data-stale="stale">verified</span>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="row-top">
+                <span class="row-name">Extra usage credits</span>
+              </div>
+              <div class="row-hero">38 credits</div>
+              <div class="row-foot">
+                <span class="tag" data-fresh="verified" data-stale="stale">verified</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pop-foot">
+            <span id="foot-time">Last updated 2 min ago</span>
+            <span aria-hidden="true">↻</span>
+          </div>
+        </div>
+
+        <div class="flip" role="group" aria-label="Demo freshness">
+          <button type="button" id="b-fresh" aria-pressed="true">just refreshed</button>
+          <button type="button" id="b-stale" aria-pressed="false">an hour later</button>
+        </div>
+        <p class="flip-cap">The numbers don't change. The labels do — that's the whole idea.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="shell">
+      <p class="eyebrow">Every number is labelled</p>
+      <h2>Most trackers guess, then round up your confidence.</h2>
+      <p>
+        Providers expose wildly different amounts of truth about your own quota, so a
+        single honest number is not always possible. Rather than hide that, every value
+        carries where it came from — shown next to the number, not buried in a docs page.
+      </p>
+
+      <div class="labels">
+        <div class="label-card">
+          <h3>verified</h3>
+          <p>Authoritative provider or local quota data. A real number.</p>
+        </div>
+        <div class="label-card">
+          <h3>observed</h3>
+          <p>Counted directly from a local client rather than the provider.</p>
+        </div>
+        <div class="label-card">
+          <h3>estimated</h3>
+          <p>Inferred from observed activity and published limits.</p>
+        </div>
+        <div class="label-card warn">
+          <h3>stale</h3>
+          <p>The last signal is too old to trust. Shown, not silently reused.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="shell">
+      <p class="eyebrow">Why this is harder than it looks</p>
+      <h2>There is no standard for this.</h2>
+      <p>
+        One tool publishes your usage. One can be asked locally. The rest publish nothing
+        at all — so they are unsupported, rather than guessed at.
+      </p>
+
+      <table>
+        <thead>
+          <tr><th>Tool</th><th>What's actually available</th><th>Claim</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Claude Code</td>
+            <td>An OAuth usage endpoint — undocumented, but used by Anthropic's own client, so stable in practice. Real window utilisation and reset times.</td>
+            <td><code>verified</code></td>
+          </tr>
+          <tr>
+            <td>Codex</td>
+            <td>No public quota API, but the local Codex app-server will answer a rate-limits request — so the number comes from the tool itself.</td>
+            <td><code>observed</code></td>
+          </tr>
+          <tr>
+            <td>ChatGPT · Gemini</td>
+            <td>No quota API of any kind. Limits are dynamic and shift with system load.</td>
+            <td><code class="none">unsupported</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="shell">
+      <p class="eyebrow">Privacy, by construction</p>
+      <h2>The question isn't whether you trust me.</h2>
+      <p>
+        It's how much you'd have to. The answer is as little as possible — and because the
+        source is public, none of the following has to be taken on faith.
+      </p>
+
+      <div class="facts">
+        <div class="fact">
+          <h3>No account, no backend</h3>
+          <p>Nothing to sign into and nothing to breach. The data path ends at your menu bar.</p>
+        </div>
+        <div class="fact">
+          <h3>No analytics, no crash reporting</h3>
+          <p>Released builds talk to the providers you connect, and to the update feed only when you ask for it.</p>
+        </div>
+        <div class="fact">
+          <h3>Credentials are read-only</h3>
+          <p>Used in memory, then discarded. Never written, never minted, and refresh tokens are never redeemed.</p>
+        </div>
+      </div>
+
+      <p style="margin-top:26px">
+        Prompts, responses, conversation content, cookies, auth headers and tokens are on
+        an explicit deny list that also covers logs and test fixtures. Connectors start
+        disconnected; background refresh is off until you turn it on.
+      </p>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="shell">
+      <p class="eyebrow">Install</p>
+      <h2>Two minutes, no sign-up.</h2>
+
+      <ol class="steps">
+        <li>Download the DMG and, if you like, its <code>.sha256</code> checksum.</li>
+        <li>Verify the checksum — optional, but it's why it's published.</li>
+        <li>Open the DMG and drag WhatTheToken to Applications.</li>
+        <li>Launch it. macOS asks once; choose Open. It appears in the menu bar with no Dock icon.</li>
+        <li>Connect Claude Code or Codex when you're ready. Both start disconnected.</li>
+      </ol>
+
+      <pre><b>shasum -a 256 -c</b> WhatTheToken-&lt;version&gt;.dmg.sha256</pre>
+
+      <div class="cta-row" style="margin-top:30px">
+        <a class="btn btn-primary" href="https://github.com/hansDraisma/whatthetoken-releases/releases/latest">
+          Download for macOS
+        </a>
+        <a class="btn btn-quiet" href="https://github.com/hansDraisma/whatthetoken-releases/releases">All releases</a>
+      </div>
+      <p class="cta-note">Requires macOS 14 or later. Updates are manual by design — no background checks, no silent installs.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="shell">
+    <div class="foot-links">
+      <a href="https://github.com/hansDraisma/whatthetoken">Source</a>
+      <a href="https://github.com/hansDraisma/whatthetoken-releases/releases">Releases</a>
+      <a href="PRIVACY.md">Privacy</a>
+      <a href="SECURITY.md">Security</a>
       <a href="https://github.com/hansDraisma/whatthetoken-releases/issues">Support</a>
-    </nav>
-  </main>
+      <a href="THIRD_PARTY_NOTICES.md">Third-party notices</a>
+    </div>
+    <p class="fine">
+      Apache-2.0. Copyright 2026 Hans Draisma. WhatTheToken is an independent community
+      project, not affiliated with, endorsed by, or sponsored by Anthropic or OpenAI.
+      &ldquo;Claude&rdquo;, &ldquo;Claude Code&rdquo; and &ldquo;Anthropic&rdquo; are trademarks of Anthropic, PBC;
+      &ldquo;Codex&rdquo;, &ldquo;ChatGPT&rdquo; and &ldquo;OpenAI&rdquo; are trademarks of OpenAI, Inc.
+      Used for identification only.
+    </p>
+    <p class="fine">This page loads no fonts, scripts, or trackers from anywhere else.</p>
+  </div>
+</footer>
+
+<script>
+// The signature interaction: same numbers, degraded provenance.
+(function () {
+  var pop   = document.getElementById('pop');
+  var trust = document.getElementById('trust');
+  var time  = document.getElementById('foot-time');
+  var bF    = document.getElementById('b-fresh');
+  var bS    = document.getElementById('b-stale');
+
+  function apply(stale) {
+    pop.classList.toggle('is-stale', stale);
+    bF.setAttribute('aria-pressed', String(!stale));
+    bS.setAttribute('aria-pressed', String(stale));
+    trust.textContent = stale ? 'Last update was 68 minutes ago.' : 'Verified by Mac connector';
+    time.textContent  = stale ? 'Last updated 68 min ago' : 'Last updated 2 min ago';
+
+    var key = stale ? 'stale' : 'fresh';
+    Array.prototype.forEach.call(document.querySelectorAll('.tag'), function (t) {
+      t.textContent = t.getAttribute('data-' + key);
+      t.classList.toggle('is-stale', stale);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.row-status'), function (s) {
+      s.textContent = s.getAttribute('data-' + key);
+    });
+  }
+
+  bF.addEventListener('click', function () { apply(false); });
+  bS.addEventListener('click', function () { apply(true); });
+})();
+</script>
+
 </body>
 </html>
